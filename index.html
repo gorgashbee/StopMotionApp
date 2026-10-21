@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎬 Stop Motion Studio - Kid Friendly Animation Editor</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Fredoka & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        fredoka: ['Fredoka', 'sans-serif'],
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            purple: '#6C5CE7',
+                            pink: '#FD79A8',
+                            yellow: '#FDCB6E',
+                            teal: '#00CEC9',
+                            blue: '#0984E3',
+                            dark: '#2D3436'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .heading-font {
+            font-family: 'Fredoka', cursive, sans-serif;
+        }
+        /* Custom scrollbars */
+        ::-webkit-scrollbar {
+            height: 10px;
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        /* Camera frame aspect ratio container */
+        .viewport-container {
+            position: relative;
+            width: 100%;
+            padding-top: 56.25%; /* 16:9 Aspect Ratio */
+            background-color: #0f172a;
+            border-radius: 1rem;
+            overflow: hidden;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+        }
+        .viewport-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .flipped {
+            transform: scaleX(-1);
+        }
+        /* Pulse capture button animation */
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 0.4; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+        .pulse-btn {
+            animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 sm:gap-3">
+            
+            <!-- Logo & Title -->
+            <div class="flex items-center space-x-2.5">
+                <div class="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-tr from-brand-purple to-brand-pink rounded-xl flex items-center justify-center text-white text-xl shadow-md transform hover:rotate-6 transition-transform">
+                    🎬
+                </div>
+                <div>
+                    <h1 class="heading-font text-xl sm:text-2xl font-bold text-slate-800 leading-none">Stop Motion Studio</h1>
+                    <p class="text-[10px] sm:text-xs text-slate-500 font-medium">5th Grade Animator Edition</p>
+                </div>
+            </div>
+
+            <!-- Project Title Input -->
+            <div class="flex items-center bg-slate-100 border border-slate-300 rounded-xl px-2.5 py-1 focus-within:ring-2 focus-within:ring-brand-purple focus-within:bg-white transition-all">
+                <i class="fa-solid font-bold fa-pencil text-slate-400 text-xs mr-2"></i>
+                <input type="text" id="projectTitle" value="My Awesome Movie" class="bg-transparent font-semibold text-slate-700 text-xs sm:text-sm focus:outline-none w-32 sm:w-44" title="Click to rename project">
+            </div>
+
+            <!-- Action Buttons Toolbar -->
+            <div class="flex items-center space-x-1.5 sm:space-x-2">
+                <!-- Save directly to Google Drive Button -->
+                <button id="googleDriveBtn" class="bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold text-xs sm:text-sm px-2.5 py-1.5 rounded-xl border border-blue-200 flex items-center space-x-1.5 transition" title="Save file to your Google Drive">
+                    <i class="fa-brands fa-google-drive text-blue-600 text-sm sm:text-base"></i>
+                    <span class="hidden sm:inline">Google Drive</span>
+                </button>
+
+                <!-- Open Project File -->
+                <label class="cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs sm:text-sm px-2.5 py-1.5 rounded-xl border border-slate-300 flex items-center space-x-1.5 transition">
+                    <i class="fa-solid fa-folder-open text-brand-purple"></i>
+                    <span class="hidden sm:inline">Open</span>
+                    <input type="file" id="openProjectInput" accept=".json,.stopmotion" class="hidden">
+                </label>
+
+                <!-- Save Project File -->
+                <button id="saveProjectBtn" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-medium text-xs sm:text-sm px-2.5 py-1.5 rounded-xl border border-indigo-200 flex items-center space-x-1.5 transition" title="Save project file">
+                    <i class="fa-solid fa-floppy-disk text-brand-purple"></i>
+                    <span class="hidden sm:inline">Save</span>
+                </button>
+
+                <!-- Export Video Movie -->
+                <button id="exportVideoBtn" class="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold text-xs sm:text-sm px-3 py-1.5 rounded-xl shadow flex items-center space-x-1.5 transition transform active:scale-95">
+                    <i class="fa-solid fa-file-video text-white"></i>
+                    <span>Export</span>
+                </button>
+
+                <!-- Help & Google Sites Guide Modal Toggle -->
+                <button id="helpGuideBtn" class="bg-amber-100 hover:bg-amber-200 text-amber-800 p-2 rounded-xl border border-amber-300 transition" title="Instructions & Google Sites Setup">
+                    <i class="fa-solid fa-circle-question text-sm sm:text-base"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Streamlined Workspace Layout -->
+    <main class="max-w-5xl w-full mx-auto p-3 sm:p-4 flex-1 flex flex-col space-y-3.5">
+
+        <!-- 1. LIVE VIEWPORT CONTAINER -->
+        <div class="viewport-container border-4 border-slate-800 shadow-md">
+            <div class="viewport-content">
+
+                <!-- Live Video Element -->
+                <video id="cameraStream" autoplay playsinline muted class="absolute inset-0 w-full h-full object-contain bg-black"></video>
+
+                <!-- Onion Skin Overlay Canvas -->
+                <canvas id="onionCanvas" class="absolute inset-0 w-full h-full object-contain pointer-events-none opacity-40"></canvas>
+
+                <!-- Grid Alignment Overlay Canvas -->
+                <canvas id="gridCanvas" class="absolute inset-0 w-full h-full object-contain pointer-events-none"></canvas>
+
+                <!-- Live Playback Canvas Overlay (shown during video preview play) -->
+                <canvas id="playbackCanvas" class="absolute inset-0 w-full h-full object-contain bg-black hidden z-10"></canvas>
+
+                <!-- Camera Offline / Permission Warning Overlay -->
+                <div id="cameraStatusOverlay" class="absolute inset-0 bg-slate-900/95 flex flex-col items-center justify-center p-6 text-center text-white z-20 hidden">
+                    <div class="w-16 h-16 bg-red-500/20 text-red-400 rounded-full flex items-center justify-center text-3xl mb-3">
+                        <i class="fa-solid fa-video-slash"></i>
+                    </div>
+                    <h3 class="heading-font text-2xl font-bold mb-2">Camera Access Blocked or Not Found</h3>
+                    <p class="text-sm text-slate-300 max-w-md mb-4" id="cameraErrorMessage">
+                        Please allow camera permissions in your browser. If you are using Google Sites, make sure your iframe includes <code class="bg-slate-800 px-2 py-0.5 rounded text-amber-300">allow="camera; microphone"</code>.
+                    </p>
+                    <button id="retryCameraBtn" class="bg-brand-purple hover:bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-semibold shadow text-sm transition">
+                        <i class="fa-solid fa-arrows-rotate mr-2"></i> Try Camera Again
+                    </button>
+                </div>
+
+                <!-- Flash effect overlay when frame captured -->
+                <div id="captureFlash" class="absolute inset-0 bg-white opacity-0 pointer-events-none transition-opacity duration-150 z-30"></div>
+
+                <!-- Status Badge (Live vs Preview Mode) -->
+                <div id="modeBadge" class="absolute top-3 left-3 bg-red-600/90 text-white font-bold text-xs px-3 py-1 rounded-full shadow flex items-center space-x-1.5 backdrop-blur-sm z-10">
+                    <span class="w-2.5 h-2.5 bg-white rounded-full animate-ping"></span>
+                    <span>LIVE CAMERA</span>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- 2. CONSOLIDATED CAMERA TOOLBAR (Directly below viewing window, all on one line) -->
+        <div class="bg-white p-2 sm:p-2.5 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm">
+            
+            <!-- Compact Red Take Shot Button -->
+            <div class="flex items-center space-x-2">
+                <button id="captureBtn" class="bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 text-white font-bold px-3.5 py-1.5 rounded-xl shadow flex items-center space-x-1.5 transition active:scale-95 border border-red-400">
+                    <i class="fa-solid fa-camera"></i>
+                    <span>Take Shot</span>
+                </button>
+                <span class="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200 hidden xs:inline">
+                    or <kbd class="font-mono font-bold text-slate-700">SPACE</kbd>
+                </span>
+            </div>
+
+            <!-- Camera Source Selector -->
+            <div class="flex items-center space-x-1.5 min-w-[130px] sm:min-w-[180px]">
+                <i class="fa-solid fa-camera text-slate-400 text-xs"></i>
+                <select id="cameraSelect" class="bg-slate-100 text-slate-700 text-xs font-semibold rounded-xl px-2 py-1.5 border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-purple w-full">
+                    <option value="">Detecting camera...</option>
+                </select>
+            </div>
+
+            <!-- Onion Skinning Control -->
+            <div class="flex items-center space-x-1.5 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-200">
+                <label for="onionToggle" class="flex items-center cursor-pointer text-xs font-bold text-slate-700 space-x-1">
+                    <input type="checkbox" id="onionToggle" checked class="w-3.5 h-3.5 text-brand-purple rounded focus:ring-brand-purple">
+                    <span>🧅 Onion</span>
+                </label>
+                <input type="range" id="onionOpacity" min="0" max="100" value="40" class="w-16 accent-brand-purple cursor-pointer" title="Adjust transparency">
+                <span id="onionOpacityVal" class="text-[11px] text-slate-500 font-mono w-6">40%</span>
+            </div>
+
+            <!-- Grid & Flip Buttons -->
+            <div class="flex items-center space-x-1">
+                <button id="toggleGridBtn" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1.5 rounded-xl text-xs font-semibold border border-slate-300 flex items-center space-x-1 transition" title="Toggle Grid Overlay">
+                    <i class="fa-solid fa-border-all text-slate-500"></i>
+                    <span>Grid</span>
+                </button>
+                <button id="toggleMirrorBtn" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1.5 rounded-xl text-xs font-semibold border border-slate-300 flex items-center space-x-1 transition" title="Flip Camera View">
+                    <i class="fa-solid fa-arrows-rotate text-slate-500"></i>
+                    <span>Flip</span>
+                </button>
+            </div>
+
+        </div>
+
+        <!-- 3. FRAME TIMELINE STRIP (Directly underneath live camera controls) -->
+        <section class="bg-white p-3 sm:p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col space-y-2.5">
+            
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                <div class="flex items-center space-x-2">
+                    <h2 class="heading-font text-lg font-bold text-slate-800 flex items-center space-x-1.5">
+                        <span>🎞️ Frame Timeline</span>
+                    </h2>
+                    <span id="frameCountBadge" class="bg-slate-100 text-slate-700 font-bold text-xs px-2.5 py-0.5 rounded-full border border-slate-200">
+                        0 Frames
+                    </span>
+                </div>
+
+                <!-- Timeline Actions -->
+                <div class="flex items-center space-x-1.5">
+                    <button id="duplicateFrameBtn" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1 rounded-xl text-xs font-semibold border border-slate-300 flex items-center space-x-1 transition disabled:opacity-50" disabled title="Duplicate selected frame">
+                        <i class="fa-solid fa-copy text-brand-purple"></i>
+                        <span class="hidden sm:inline">Duplicate</span>
+                    </button>
+                    <button id="deleteFrameBtn" class="bg-rose-50 hover:bg-rose-100 text-rose-700 px-2.5 py-1 rounded-xl text-xs font-semibold border border-rose-200 flex items-center space-x-1 transition disabled:opacity-50" disabled title="Delete selected frame">
+                        <i class="fa-solid fa-trash-can"></i>
+                        <span class="hidden sm:inline">Delete</span>
+                    </button>
+                    <button id="clearAllBtn" class="bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 px-2.5 py-1 rounded-xl text-xs font-semibold border border-slate-200 flex items-center space-x-1 transition" title="Clear all frames">
+                        <i class="fa-solid fa-rotate-left"></i>
+                        <span class="hidden sm:inline">Clear All</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Scrollable Filmstrip Container -->
+            <div id="timelineScroll" class="relative min-h-[115px] bg-slate-900/90 rounded-xl p-2.5 overflow-x-auto flex items-center space-x-2.5 border-2 border-slate-800">
+                
+                <!-- Empty Timeline Placeholder -->
+                <div id="emptyTimelineMsg" class="w-full flex flex-col items-center justify-center text-slate-400 py-4 text-center">
+                    <i class="fa-solid fa-film text-2xl mb-1 opacity-50"></i>
+                    <p class="text-xs font-semibold">Your timeline is empty!</p>
+                    <p class="text-[11px] text-slate-500 mt-0.5">Click <strong>Take Shot</strong> or tap <kbd class="bg-slate-800 px-1 py-0.5 rounded text-amber-300 font-mono">SPACEBAR</kbd> to add frames.</p>
+                </div>
+
+                <!-- Dynamic Frames appended via JS -->
+                <div id="framesContainer" class="flex items-center space-x-2.5"></div>
+
+            </div>
+
+        </section>
+
+        <!-- 4. COMPACT ANIMATION CONTROLS (Positioned below frame timeline, using icon buttons) -->
+        <div class="bg-white p-2.5 sm:p-3 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-2.5 text-xs sm:text-sm">
+            
+            <!-- Play / Stop & Loop Icon Buttons -->
+            <div class="flex items-center space-x-2">
+                <button id="playBtn" class="bg-brand-purple hover:bg-indigo-700 text-white w-9 h-9 rounded-xl font-bold flex items-center justify-center shadow transition active:scale-95" title="Play Movie Preview">
+                    <i class="fa-solid fa-play text-sm"></i>
+                </button>
+                <button id="stopBtn" class="bg-slate-800 hover:bg-slate-900 text-white w-9 h-9 rounded-xl font-bold flex items-center justify-center shadow transition active:scale-95 hidden" title="Stop Preview">
+                    <i class="fa-solid fa-stop text-sm"></i>
+                </button>
+
+                <div class="h-6 w-px bg-slate-200 mx-1"></div>
+
+                <!-- Loop Toggle -->
+                <label class="flex items-center space-x-1.5 cursor-pointer text-slate-700 font-semibold select-none" title="Loop Animation Playback">
+                    <input type="checkbox" id="loopToggle" checked class="w-4 h-4 text-brand-purple rounded focus:ring-brand-purple">
+                    <i class="fa-solid fa-repeat text-slate-500"></i>
+                    <span class="text-xs">Loop</span>
+                </label>
+            </div>
+
+            <!-- Speed FPS Compact Slider -->
+            <div class="flex items-center space-x-2 bg-slate-50 px-3 py-1 rounded-xl border border-slate-200">
+                <i class="fa-solid fa-gauge-high text-slate-400 text-xs"></i>
+                <span class="font-semibold text-slate-700 text-xs">Speed:</span>
+                <input type="range" id="fpsSlider" min="1" max="24" value="8" class="w-20 sm:w-24 accent-brand-purple cursor-pointer" title="Adjust speed (FPS)">
+                <span id="fpsDisplay" class="bg-amber-100 text-amber-800 text-[11px] px-2 py-0.5 rounded-full font-bold font-mono">8 FPS</span>
+            </div>
+
+            <!-- Duration Badge & Mute Audio Icon -->
+            <div class="flex items-center space-x-2.5">
+                <span id="durationBadge" class="text-xs font-semibold bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-full border border-indigo-200">0.0s total</span>
+                <button id="soundToggleBtn" class="text-slate-500 hover:text-brand-purple p-1.5 rounded-lg hover:bg-slate-100 transition" title="Toggle Shutter Sound">
+                    <i class="fa-solid fa-volume-high text-sm" id="soundIcon"></i>
+                </button>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-white border-t border-slate-200 py-2.5 text-center text-xs text-slate-500 mt-auto">
+        <p>🎬 Stop Motion Studio | Made for 5th Grade Creators & Chromebook Classrooms</p>
+    </footer>
+
+    <!-- MODAL: Clear All Frames Confirmation -->
+    <div id="clearModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 hidden p-4">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 text-center space-y-4">
+            <div class="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center text-xl mx-auto">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h3 class="heading-font text-xl font-bold text-slate-800">Clear All Frames?</h3>
+            <p class="text-xs text-slate-600 leading-relaxed">
+                Are you sure you want to delete all frames? This action cannot be undone unless you've saved your project file.
+            </p>
+            <div class="flex items-center justify-center space-x-2 pt-2">
+                <button id="confirmClearBtn" class="bg-rose-600 hover:bg-rose-700 text-white font-semibold px-4 py-2 rounded-xl text-xs transition shadow">
+                    Yes, Clear All
+                </button>
+                <button id="cancelClearBtn" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold px-4 py-2 rounded-xl text-xs transition">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Save to Google Drive Helper -->
+    <div id="driveModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 hidden p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 text-center space-y-4">
+            <div class="w-14 h-14 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-2xl mx-auto">
+                <i class="fa-brands fa-google-drive"></i>
+            </div>
+            <h3 class="heading-font text-2xl font-bold text-slate-800">Save to Google Drive</h3>
+            <p class="text-xs sm:text-sm text-slate-600 text-left leading-relaxed">
+                On Chromebooks and Chrome browsers, clicking <strong>Save Project</strong> or <strong>Export Movie</strong> lets you pick your <strong>Google Drive</strong> folder directly as your save destination!
+            </p>
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs text-left space-y-1.5 font-medium text-slate-700">
+                <p>📂 <strong>1. Click "Save Project" or "Export Movie"</strong></p>
+                <p>📁 <strong>2. Choose your Google Drive folder in the file picker</strong></p>
+                <p>🔄 <strong>3. To open later, click "Open" and choose your saved .stopmotion file!</strong></p>
+            </div>
+            <div class="flex items-center justify-center space-x-2 pt-2">
+                <button id="quickSaveDriveBtn" class="bg-brand-purple hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded-xl text-xs transition shadow">
+                    Save Project Now
+                </button>
+                <button id="closeDriveModalBtn" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold px-4 py-2 rounded-xl text-xs transition">
+                    Got It!
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Exporting Video Progress -->
+    <div id="exportModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center z-50 hidden p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 text-center space-y-4">
+            <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-3xl mx-auto animate-bounce">
+                <i class="fa-solid fa-clapperboard"></i>
+            </div>
+            <h3 class="heading-font text-2xl font-bold text-slate-800">Rendering Your Movie!</h3>
+            <p class="text-sm text-slate-600">Please wait while we put all your frames together into a video file...</p>
+            
+            <div class="w-full bg-slate-200 rounded-full h-3 overflow-hidden">
+                <div id="exportProgressBar" class="bg-emerald-500 h-full w-0 transition-all duration-200"></div>
+            </div>
+            <span id="exportStatusText" class="text-xs text-slate-500 font-semibold block">Preparing frames...</span>
+        </div>
+    </div>
+
+    <!-- MODAL: Help & Google Sites Embedding Guide -->
+    <div id="helpModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 hidden p-4">
+        <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto space-y-5">
+            
+            <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+                <h3 class="heading-font text-2xl font-bold text-slate-800 flex items-center space-x-2">
+                    <span>💡 Animator Guide & Teacher Setup</span>
+                </h3>
+                <button id="closeHelpBtn" class="text-slate-400 hover:text-slate-700 text-xl p-1">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Student Tips -->
+            <div class="space-y-2">
+                <h4 class="heading-font text-lg font-bold text-brand-purple flex items-center space-x-2">
+                    <span>🎬 How to Make Great Stop Motion</span>
+                </h4>
+                <ul class="text-xs sm:text-sm text-slate-600 space-y-1.5 list-disc pl-5">
+                    <li><strong>Small Moves:</strong> Move your object only a tiny bit between each shot! Small moves equal smooth animation.</li>
+                    <li><strong>Onion Skinning:</strong> Keep onion skin turned ON so you can see a shadow of where your last frame was.</li>
+                    <li><strong>Keep Camera Still:</strong> Make sure your webcam or doc camera doesn't move while capturing frames.</li>
+                    <li><strong>Use the Spacebar:</strong> Tap the <kbd class="bg-slate-200 px-1 rounded text-slate-800 font-mono">SPACEBAR</kbd> key to quickly take photos without touching the camera.</li>
+                </ul>
+            </div>
+
+            <!-- Google Sites Embed Instructions for Teachers -->
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                <h4 class="heading-font text-base font-bold text-slate-800 flex items-center space-x-2">
+                    <i class="fa-brands fa-google text-blue-500"></i>
+                    <span>How to Embed on Google Sites (Teacher Instructions)</span>
+                </h4>
+                <p class="text-xs text-slate-600">
+                    To host this app inside Google Sites without camera permission errors, follow these steps:
+                </p>
+                <ol class="text-xs text-slate-700 space-y-2 list-decimal pl-5 font-medium">
+                    <li>
+                        Host this single HTML file on GitHub Pages, Netlify, or embed using an <code class="bg-white border px-1 rounded">&lt;iframe&gt;</code> code block in Google Sites.
+                    </li>
+                    <li>
+                        In Google Sites editor, click <strong>Embed &gt; Embed Code</strong> and use the following iframe code:
+                        <pre class="bg-slate-800 text-amber-300 p-2.5 rounded-lg text-[11px] font-mono mt-1 overflow-x-auto select-all">
+&lt;iframe src="YOUR_HOSTED_URL_HERE" 
+  width="100%" height="800" 
+  style="border:none;" 
+  allow="camera; microphone"&gt;
+&lt;/iframe&gt;</pre>
+                    </li>
+                    <li>
+                        <strong>Crucial Step:</strong> Ensure the <code class="bg-slate-200 text-slate-900 px-1 rounded">allow="camera; microphone"</code> attribute is included in the iframe tag. This enables camera access inside embedded Google Sites pages!
+                    </li>
+                    <li>
+                        <strong>Google Drive Saving:</strong> When students click <em>"Save Project"</em> or <em>"Export Movie"</em>, Chromebooks automatically give students the choice to download directly into their <strong>Google Drive</strong> folder!
+                    </li>
+                </ol>
+            </div>
+
+            <div class="text-center pt-2">
+                <button id="gotItHelpBtn" class="bg-brand-purple hover:bg-indigo-700 text-white font-semibold px-6 py-2.5 rounded-xl text-sm shadow">
+                    Got It! Let's Animate
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- MAIN JAVASCRIPT LOGIC -->
+    <script>
+        // State Management
+        let frames = []; // Array of base64 image strings
+        let selectedFrameIndex = -1;
+        let activeCameraDeviceId = null;
+        let isPlaying = false;
+        let playbackInterval = null;
+        let currentPlaybackIndex = 0;
+        let fps = 8;
+        let soundEnabled = true;
+        let isMirrored = false;
+        let isGridOn = false;
+
+        // Web Audio API Synthesizer for Audio Feedback
+        let audioCtx = null;
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            try {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                const now = audioCtx.currentTime;
+
+                if (type === 'shutter') {
+                    // Quick camera shutter click effect
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(400, now);
+                    osc.frequency.exponentialRampToValueAtTime(80, now + 0.08);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.08);
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+                } else if (type === 'pop') {
+                    // Soft UI pop sound
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(600, now);
+                    osc.frequency.exponentialRampToValueAtTime(1200, now + 0.05);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.05);
+                    osc.start(now);
+                    osc.stop(now + 0.05);
+                } else if (type === 'delete') {
+                    // Lower warning sound
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(250, now);
+                    osc.frequency.linearRampToValueAtTime(100, now + 0.12);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.12);
+                    osc.start(now);
+                    osc.stop(now + 0.12);
+                }
+            } catch (e) {
+                console.warn('Audio play error:', e);
+            }
+        }
+
+        // DOM Elements
+        const videoElem = document.getElementById('cameraStream');
+        const onionCanvas = document.getElementById('onionCanvas');
+        const gridCanvas = document.getElementById('gridCanvas');
+        const playbackCanvas = document.getElementById('playbackCanvas');
+        const cameraSelect = document.getElementById('cameraSelect');
+        const captureBtn = document.getElementById('captureBtn');
+        const captureFlash = document.getElementById('captureFlash');
+        const cameraStatusOverlay = document.getElementById('cameraStatusOverlay');
+        const cameraErrorMessage = document.getElementById('cameraErrorMessage');
+        const retryCameraBtn = document.getElementById('retryCameraBtn');
+        const modeBadge = document.getElementById('modeBadge');
+
+        const onionToggle = document.getElementById('onionToggle');
+        const onionOpacity = document.getElementById('onionOpacity');
+        const onionOpacityVal = document.getElementById('onionOpacityVal');
+        const toggleGridBtn = document.getElementById('toggleGridBtn');
+        const toggleMirrorBtn = document.getElementById('toggleMirrorBtn');
+
+        const fpsSlider = document.getElementById('fpsSlider');
+        const fpsDisplay = document.getElementById('fpsDisplay');
+        const playBtn = document.getElementById('playBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const loopToggle = document.getElementById('loopToggle');
+        const durationBadge = document.getElementById('durationBadge');
+        const soundToggleBtn = document.getElementById('soundToggleBtn');
+        const soundIcon = document.getElementById('soundIcon');
+
+        const framesContainer = document.getElementById('framesContainer');
+        const emptyTimelineMsg = document.getElementById('emptyTimelineMsg');
+        const frameCountBadge = document.getElementById('frameCountBadge');
+        const duplicateFrameBtn = document.getElementById('duplicateFrameBtn');
+        const deleteFrameBtn = document.getElementById('deleteFrameBtn');
+        const clearAllBtn = document.getElementById('clearAllBtn');
+
+        const saveProjectBtn = document.getElementById('saveProjectBtn');
+        const openProjectInput = document.getElementById('openProjectInput');
+        const exportVideoBtn = document.getElementById('exportVideoBtn');
+        const projectTitleInput = document.getElementById('projectTitle');
+
+        const googleDriveBtn = document.getElementById('googleDriveBtn');
+        const driveModal = document.getElementById('driveModal');
+        const closeDriveModalBtn = document.getElementById('closeDriveModalBtn');
+        const quickSaveDriveBtn = document.getElementById('quickSaveDriveBtn');
+
+        const clearModal = document.getElementById('clearModal');
+        const cancelClearBtn = document.getElementById('cancelClearBtn');
+        const confirmClearBtn = document.getElementById('confirmClearBtn');
+
+        const exportModal = document.getElementById('exportModal');
+        const exportProgressBar = document.getElementById('exportProgressBar');
+        const exportStatusText = document.getElementById('exportStatusText');
+
+        const helpGuideBtn = document.getElementById('helpGuideBtn');
+        const helpModal = document.getElementById('helpModal');
+        const closeHelpBtn = document.getElementById('closeHelpBtn');
+        const gotItHelpBtn = document.getElementById('gotItHelpBtn');
+
+        // --- CAMERA SYSTEM & MEDIASTREAM ---
+
+        async function initCameraDevices() {
+            try {
+                if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+                    throw new Error('Camera access not supported by browser or iframe permissions blocked.');
+                }
+
+                // Prompt user for permission first to populate device names
+                const initialStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                // Stop initial stream right away
+                initialStream.getTracks().forEach(track => track.stop());
+
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoDevices = devices.filter(d => d.kind === 'videoinput');
+
+                cameraSelect.innerHTML = '';
+                if (videoDevices.length === 0) {
+                    cameraSelect.innerHTML = '<option value="">No cameras found</option>';
+                    showCameraError('No webcam or document camera detected. Please plug in a camera.');
+                    return;
+                }
+
+                videoDevices.forEach((device, idx) => {
+                    const opt = document.createElement('option');
+                    opt.value = device.deviceId;
+                    opt.textContent = device.label || `Camera ${idx + 1}`;
+                    cameraSelect.appendChild(opt);
+                });
+
+                activeCameraDeviceId = videoDevices[0].deviceId;
+                await startCameraStream(activeCameraDeviceId);
+
+            } catch (err) {
+                console.error('Camera initialization error:', err);
+                showCameraError('Could not access camera. Make sure camera permissions are enabled in your browser or Google Sites iframe.');
+            }
+        }
+
+        async function startCameraStream(deviceId) {
+            try {
+                if (window.currentStream) {
+                    window.currentStream.getTracks().forEach(track => track.stop());
+                }
+
+                const constraints = {
+                    video: {
+                        deviceId: deviceId ? { exact: deviceId } : undefined,
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    },
+                    audio: false
+                };
+
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                window.currentStream = stream;
+                videoElem.srcObject = stream;
+                cameraStatusOverlay.classList.add('hidden');
+
+                videoElem.onloadedmetadata = () => {
+                    syncCanvasDimensions();
+                    drawOnionSkin();
+                    drawGridOverlay();
+                };
+
+            } catch (err) {
+                console.error('Failed to start camera stream:', err);
+                showCameraError('Camera failed to start. Another app may be using it.');
+            }
+        }
+
+        function showCameraError(msg) {
+            cameraErrorMessage.textContent = msg;
+            cameraStatusOverlay.classList.remove('hidden');
+        }
+
+        function syncCanvasDimensions() {
+            const w = videoElem.videoWidth || 1280;
+            const h = videoElem.videoHeight || 720;
+
+            [onionCanvas, gridCanvas, playbackCanvas].forEach(c => {
+                c.width = w;
+                c.height = h;
+            });
+
+            drawGridOverlay();
+            drawOnionSkin();
+        }
+
+        // --- GRID OVERLAY ---
+
+        function drawGridOverlay() {
+            const ctx = gridCanvas.getContext('2d');
+            ctx.clearRect(0, 0, gridCanvas.width, gridCanvas.height);
+
+            if (!isGridOn) return;
+
+            const w = gridCanvas.width;
+            const h = gridCanvas.height;
+
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.lineWidth = 2;
+
+            // Rule of thirds lines
+            ctx.beginPath();
+            // Vertical lines
+            ctx.moveTo(w / 3, 0); ctx.lineTo(w / 3, h);
+            ctx.moveTo((w / 3) * 2, 0); ctx.lineTo((w / 3) * 2, h);
+            // Horizontal lines
+            ctx.moveTo(0, h / 3); ctx.lineTo(w, h / 3);
+            ctx.moveTo(0, (h / 3) * 2); ctx.lineTo(w, (h / 3) * 2);
+            ctx.stroke();
+
+            // Center Crosshair
+            ctx.strokeStyle = 'rgba(253, 203, 110, 0.6)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(w / 2, h / 2, 12, 0, 2 * Math.PI);
+            ctx.moveTo(w / 2 - 20, h / 2); ctx.lineTo(w / 2 + 20, h / 2);
+            ctx.moveTo(w / 2, h / 2 - 20); ctx.lineTo(w / 2, h / 2 + 20);
+            ctx.stroke();
+        }
+
+        // --- ONION SKINNING ---
+
+        function drawOnionSkin() {
+            const ctx = onionCanvas.getContext('2d');
+            ctx.clearRect(0, 0, onionCanvas.width, onionCanvas.height);
+
+            if (!onionToggle.checked || frames.length === 0) return;
+
+            // Draw the last frame in the list as onion skin shadow
+            const lastFrameSrc = frames[frames.length - 1];
+            const img = new Image();
+            img.onload = () => {
+                ctx.save();
+                if (isMirrored) {
+                    ctx.translate(onionCanvas.width, 0);
+                    ctx.scale(-1, 1);
+                }
+                ctx.drawImage(img, 0, 0, onionCanvas.width, onionCanvas.height);
+                ctx.restore();
+            };
+            img.src = lastFrameSrc;
+        }
+
+        // --- FRAME CAPTURE ---
+
+        function captureFrame() {
+            if (isPlaying) stopPlayback();
+
+            if (!videoElem.srcObject || videoElem.videoWidth === 0) {
+                alert('Camera is not active. Please check your camera connection.');
+                return;
+            }
+
+            // Visual shutter flash
+            captureFlash.classList.remove('opacity-0');
+            captureFlash.classList.add('opacity-80');
+            setTimeout(() => {
+                captureFlash.classList.remove('opacity-80');
+                captureFlash.classList.add('opacity-0');
+            }, 100);
+
+            // Shutter sound
+            playSound('shutter');
+
+            // Draw current video frame to temp offscreen canvas
+            const capCanvas = document.createElement('canvas');
+            capCanvas.width = videoElem.videoWidth || 1280;
+            capCanvas.height = videoElem.videoHeight || 720;
+            const ctx = capCanvas.getContext('2d');
+
+            if (isMirrored) {
+                ctx.translate(capCanvas.width, 0);
+                ctx.scale(-1, 1);
+            }
+
+            ctx.drawImage(videoElem, 0, 0, capCanvas.width, capCanvas.height);
+
+            // Save high quality base64 image
+            const dataUrl = capCanvas.toDataURL('image/jpeg', 0.88);
+            frames.push(dataUrl);
+
+            selectedFrameIndex = frames.length - 1;
+
+            renderTimeline();
+            drawOnionSkin();
+            updateDurationBadge();
+
+            // Auto scroll timeline to end
+            const timelineScroll = document.getElementById('timelineScroll');
+            setTimeout(() => {
+                timelineScroll.scrollLeft = timelineScroll.scrollWidth;
+            }, 50);
+        }
+
+        // --- TIMELINE & FRAME MANAGEMENT ---
+
+        function renderTimeline() {
+            framesContainer.innerHTML = '';
+
+            if (frames.length === 0) {
+                emptyTimelineMsg.classList.remove('hidden');
+                frameCountBadge.textContent = '0 Frames';
+                duplicateFrameBtn.disabled = true;
+                deleteFrameBtn.disabled = true;
+                selectedFrameIndex = -1;
+                return;
+            }
+
+            emptyTimelineMsg.classList.add('hidden');
+            frameCountBadge.textContent = `${frames.length} Frame${frames.length === 1 ? '' : 's'}`;
+
+            if (selectedFrameIndex < 0 || selectedFrameIndex >= frames.length) {
+                selectedFrameIndex = frames.length - 1;
+            }
+
+            duplicateFrameBtn.disabled = false;
+            deleteFrameBtn.disabled = false;
+
+            frames.forEach((frameData, idx) => {
+                const card = document.createElement('div');
+                const isSelected = idx === selectedFrameIndex;
+
+                card.className = `relative flex-shrink-0 w-28 h-20 rounded-xl overflow-hidden border-2 cursor-pointer transition-all duration-150 transform hover:scale-105 group ${
+                    isSelected ? 'border-amber-400 ring-4 ring-amber-400/30 scale-105 z-10' : 'border-slate-700 opacity-80 hover:opacity-100'
+                }`;
+
+                card.innerHTML = `
+                    <img src="${frameData}" class="w-full h-full object-cover" alt="Frame ${idx + 1}">
+                    <span class="absolute top-1 left-1 bg-slate-900/80 text-white font-mono text-[10px] font-bold px-1.5 py-0.5 rounded shadow">
+                        #${idx + 1}
+                    </span>
+                    <div class="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-between px-1">
+                        <button onclick="event.stopPropagation(); moveFrame(${idx}, -1)" class="text-white hover:text-amber-300 p-1 text-xs" title="Move Left" ${idx === 0 ? 'disabled style="opacity:0.3"' : ''}>
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </button>
+                        <button onclick="event.stopPropagation(); duplicateFrameAtIndex(${idx})" class="text-white hover:text-emerald-300 p-1 text-xs" title="Duplicate Frame">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
+                        <button onclick="event.stopPropagation(); moveFrame(${idx}, 1)" class="text-white hover:text-amber-300 p-1 text-xs" title="Move Right" ${idx === frames.length - 1 ? 'disabled style="opacity:0.3"' : ''}>
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </button>
+                    </div>
+                `;
+
+                card.addEventListener('click', () => {
+                    selectedFrameIndex = idx;
+                    renderTimeline();
+                    playSound('pop');
+                });
+
+                framesContainer.appendChild(card);
+            });
+        }
+
+        function moveFrame(fromIndex, direction) {
+            const toIndex = fromIndex + direction;
+            if (toIndex < 0 || toIndex >= frames.length) return;
+
+            const temp = frames[fromIndex];
+            frames[fromIndex] = frames[toIndex];
+            frames[toIndex] = temp;
+
+            selectedFrameIndex = toIndex;
+            renderTimeline();
+            drawOnionSkin();
+            playSound('pop');
+        }
+
+        function duplicateFrameAtIndex(index) {
+            if (index < 0 || index >= frames.length) return;
+            const duplicateData = frames[index];
+            frames.splice(index + 1, 0, duplicateData);
+            selectedFrameIndex = index + 1;
+            renderTimeline();
+            drawOnionSkin();
+            updateDurationBadge();
+            playSound('pop');
+        }
+
+        function deleteSelectedFrame() {
+            if (selectedFrameIndex < 0 || selectedFrameIndex >= frames.length) return;
+
+            frames.splice(selectedFrameIndex, 1);
+            if (selectedFrameIndex >= frames.length) {
+                selectedFrameIndex = frames.length - 1;
+            }
+            renderTimeline();
+            drawOnionSkin();
+            updateDurationBadge();
+            playSound('delete');
+        }
+
+        function updateDurationBadge() {
+            const totalSecs = (frames.length / fps).toFixed(1);
+            durationBadge.textContent = `${totalSecs}s total (${frames.length} frames)`;
+        }
+
+        // --- PLAYBACK ENGINE ---
+
+        function startPlayback() {
+            if (frames.length === 0) {
+                alert('Capture some frames first before playing!');
+                return;
+            }
+
+            isPlaying = true;
+            playBtn.classList.add('hidden');
+            stopBtn.classList.remove('hidden');
+            stopBtn.disabled = false;
+            playbackCanvas.classList.remove('hidden');
+            modeBadge.className = 'absolute top-3 left-3 bg-emerald-600/90 text-white font-bold text-xs px-3 py-1 rounded-full shadow flex items-center space-x-1.5 backdrop-blur-sm z-10';
+            modeBadge.innerHTML = '<span class="w-2.5 h-2.5 bg-white rounded-full animate-pulse"></span><span>PLAYING PREVIEW</span>';
+
+            currentPlaybackIndex = 0;
+            const intervalMs = 1000 / fps;
+
+            const pCtx = playbackCanvas.getContext('2d');
+
+            playbackInterval = setInterval(() => {
+                if (currentPlaybackIndex >= frames.length) {
+                    if (loopToggle.checked) {
+                        currentPlaybackIndex = 0;
+                    } else {
+                        stopPlayback();
+                        return;
+                    }
+                }
+
+                const img = new Image();
+                img.onload = () => {
+                    pCtx.clearRect(0, 0, playbackCanvas.width, playbackCanvas.height);
+                    pCtx.drawImage(img, 0, 0, playbackCanvas.width, playbackCanvas.height);
+                };
+                img.src = frames[currentPlaybackIndex];
+
+                // Highlight active frame in timeline strip
+                selectedFrameIndex = currentPlaybackIndex;
+                renderTimeline();
+
+                currentPlaybackIndex++;
+            }, intervalMs);
+        }
+
+        function stopPlayback() {
+            isPlaying = false;
+            if (playbackInterval) clearInterval(playbackInterval);
+            playbackInterval = null;
+
+            playbackCanvas.classList.add('hidden');
+            playBtn.classList.remove('hidden');
+            stopBtn.classList.add('hidden');
+            modeBadge.className = 'absolute top-3 left-3 bg-red-600/90 text-white font-bold text-xs px-3 py-1 rounded-full shadow flex items-center space-x-1.5 backdrop-blur-sm z-10';
+            modeBadge.innerHTML = '<span class="w-2.5 h-2.5 bg-white rounded-full animate-ping"></span><span>LIVE CAMERA</span>';
+
+            renderTimeline();
+        }
+
+        // --- EXPORT TO VIDEO (.webm) ---
+
+        async function exportToVideo() {
+            if (frames.length === 0) {
+                alert('Please take some photos first before exporting your movie!');
+                return;
+            }
+
+            if (isPlaying) stopPlayback();
+
+            exportModal.classList.remove('hidden');
+            exportProgressBar.style.width = '0%';
+            exportStatusText.textContent = 'Preparing video canvas...';
+
+            const exportCanvas = document.createElement('canvas');
+            const sampleImg = new Image();
+
+            sampleImg.onload = async () => {
+                exportCanvas.width = sampleImg.width || 1280;
+                exportCanvas.height = sampleImg.height || 720;
+                const ctx = exportCanvas.getContext('2d');
+
+                // MediaRecorder Setup
+                const stream = exportCanvas.captureStream(fps);
+                let mimeType = 'video/webm;codecs=vp9';
+                if (!MediaRecorder.isTypeSupported(mimeType)) {
+                    mimeType = 'video/webm';
+                }
+
+                const mediaRecorder = new MediaRecorder(stream, { mimeType });
+                const chunks = [];
+
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) chunks.push(e.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(chunks, { type: 'video/webm' });
+                    const url = URL.createObjectURL(blob);
+
+                    const title = (projectTitleInput.value.trim() || 'My Stop Motion Movie').replace(/[^a-z0-9]/gi, '_');
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${title}.webm`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+
+                    exportProgressBar.style.width = '100%';
+                    exportStatusText.textContent = 'Done! Video saved to your Downloads/Google Drive!';
+                    setTimeout(() => {
+                        exportModal.classList.add('hidden');
+                    }, 1200);
+                };
+
+                mediaRecorder.start();
+
+                // Draw frames sequentially
+                const frameDurationMs = 1000 / fps;
+                for (let i = 0; i < frames.length; i++) {
+                    await new Promise((resolve) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            ctx.clearRect(0, 0, exportCanvas.width, exportCanvas.height);
+                            ctx.drawImage(img, 0, 0, exportCanvas.width, exportCanvas.height);
+
+                            const percent = Math.round(((i + 1) / frames.length) * 100);
+                            exportProgressBar.style.width = `${percent}%`;
+                            exportStatusText.textContent = `Rendering frame ${i + 1} of ${frames.length}...`;
+
+                            setTimeout(resolve, frameDurationMs);
+                        };
+                        img.src = frames[i];
+                    });
+                }
+
+                mediaRecorder.stop();
+            };
+
+            sampleImg.src = frames[0];
+        }
+
+        // --- SAVE & OPEN PROJECT FILE (.stopmotion / .json) ---
+
+        function saveProjectFile() {
+            if (frames.length === 0) {
+                alert('No frames to save yet!');
+                return;
+            }
+
+            const projectData = {
+                title: projectTitleInput.value.trim() || 'My Stop Motion Movie',
+                version: '1.0',
+                fps: fps,
+                createdAt: new Date().toISOString(),
+                frames: frames
+            };
+
+            const jsonStr = JSON.stringify(projectData);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+
+            const safeTitle = projectData.title.replace(/[^a-z0-9]/gi, '_');
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${safeTitle}.stopmotion`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            playSound('pop');
+        }
+
+        function openProjectFile(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const project = JSON.parse(event.target.result);
+                    if (project && Array.isArray(project.frames)) {
+                        frames = project.frames;
+                        if (project.title) projectTitleInput.value = project.title;
+                        if (project.fps) {
+                            fps = project.fps;
+                            fpsSlider.value = fps;
+                            fpsDisplay.textContent = `${fps} FPS`;
+                        }
+
+                        selectedFrameIndex = 0;
+                        renderTimeline();
+                        drawOnionSkin();
+                        updateDurationBadge();
+                        alert(`Successfully loaded project "${project.title || 'Stop Motion'}" with ${frames.length} frames!`);
+                    } else {
+                        alert('Invalid project file format.');
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert('Error reading project file. Make sure it is a valid .stopmotion or .json file.');
+                }
+            };
+            reader.readAsText(file);
+            e.target.value = ''; // reset file input
+        }
+
+        // --- EVENT LISTENERS INITIALIZATION ---
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initCameraDevices();
+
+            // Google Drive Modal Handlers
+            if (googleDriveBtn) {
+                googleDriveBtn.addEventListener('click', () => {
+                    driveModal.classList.remove('hidden');
+                    playSound('pop');
+                });
+            }
+            if (closeDriveModalBtn) {
+                closeDriveModalBtn.addEventListener('click', () => {
+                    driveModal.classList.add('hidden');
+                });
+            }
+            if (quickSaveDriveBtn) {
+                quickSaveDriveBtn.addEventListener('click', () => {
+                    driveModal.classList.add('hidden');
+                    saveProjectFile();
+                });
+            }
+
+            // Camera Select Switcher
+            cameraSelect.addEventListener('change', (e) => {
+                activeCameraDeviceId = e.target.value;
+                if (activeCameraDeviceId) {
+                    startCameraStream(activeCameraDeviceId);
+                }
+            });
+
+            // Capture Shot Button
+            captureBtn.addEventListener('click', captureFrame);
+
+            // Keyboard Shortcuts
+            window.addEventListener('keydown', (e) => {
+                // Ignore hotkeys if user is actively typing in an input box
+                if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) {
+                    return;
+                }
+
+                if (e.code === 'Space') {
+                    e.preventDefault();
+                    captureFrame();
+                } else if (e.code === 'ArrowLeft') {
+                    if (selectedFrameIndex > 0) {
+                        selectedFrameIndex--;
+                        renderTimeline();
+                    }
+                } else if (e.code === 'ArrowRight') {
+                    if (selectedFrameIndex < frames.length - 1) {
+                        selectedFrameIndex++;
+                        renderTimeline();
+                    }
+                } else if (e.code === 'Delete' || e.code === 'Backspace') {
+                    deleteSelectedFrame();
+                }
+            });
+
+            // Onion Skin Toggles
+            onionToggle.addEventListener('change', () => drawOnionSkin());
+            onionOpacity.addEventListener('input', (e) => {
+                const val = e.target.value;
+                onionOpacityVal.textContent = `${val}%`;
+                onionCanvas.style.opacity = val / 100;
+            });
+
+            // Grid & Flip Toggles
+            toggleGridBtn.addEventListener('click', () => {
+                isGridOn = !isGridOn;
+                toggleGridBtn.classList.toggle('bg-amber-100', isGridOn);
+                toggleGridBtn.classList.toggle('text-amber-800', isGridOn);
+                drawGridOverlay();
+                playSound('pop');
+            });
+
+            toggleMirrorBtn.addEventListener('click', () => {
+                isMirrored = !isMirrored;
+                videoElem.classList.toggle('flipped', isMirrored);
+                toggleMirrorBtn.classList.toggle('bg-indigo-100', isMirrored);
+                drawOnionSkin();
+                playSound('pop');
+            });
+
+            // FPS Slider
+            fpsSlider.addEventListener('input', (e) => {
+                fps = parseInt(e.target.value, 10);
+                fpsDisplay.textContent = `${fps} FPS`;
+                updateDurationBadge();
+                if (isPlaying) {
+                    stopPlayback();
+                    startPlayback();
+                }
+            });
+
+            // Playback buttons
+            playBtn.addEventListener('click', () => startPlayback());
+            stopBtn.addEventListener('click', () => stopPlayback());
+
+            // Sound Toggle
+            soundToggleBtn.addEventListener('click', () => {
+                soundEnabled = !soundEnabled;
+                soundIcon.className = soundEnabled ? 'fa-solid fa-volume-high' : 'fa-solid fa-volume-xmark';
+                playSound('pop');
+            });
+
+            // Timeline buttons
+            duplicateFrameBtn.addEventListener('click', () => duplicateFrameAtIndex(selectedFrameIndex));
+            deleteFrameBtn.addEventListener('click', () => deleteSelectedFrame());
+
+            // Clear All Modal
+            clearAllBtn.addEventListener('click', () => {
+                if (frames.length === 0) return;
+                clearModal.classList.remove('hidden');
+            });
+            cancelClearBtn.addEventListener('click', () => clearModal.classList.add('hidden'));
+            confirmClearBtn.addEventListener('click', () => {
+                frames = [];
+                selectedFrameIndex = -1;
+                renderTimeline();
+                drawOnionSkin();
+                updateDurationBadge();
+                clearModal.classList.add('hidden');
+                playSound('delete');
+            });
+
+            // Save & Open Project
+            saveProjectBtn.addEventListener('click', saveProjectFile);
+            openProjectInput.addEventListener('change', openProjectFile);
+            exportVideoBtn.addEventListener('click', exportToVideo);
+
+            // Camera Retry
+            retryCameraBtn.addEventListener('click', () => initCameraDevices());
+
+            // Help Modal
+            helpGuideBtn.addEventListener('click', () => helpModal.classList.remove('hidden'));
+            closeHelpBtn.addEventListener('click', () => helpModal.classList.add('hidden'));
+            gotItHelpBtn.addEventListener('click', () => helpModal.classList.add('hidden'));
+
+            // Sync window resize for canvases
+            window.addEventListener('resize', syncCanvasDimensions);
+        });
+    </script>
+</body>
+</html>
